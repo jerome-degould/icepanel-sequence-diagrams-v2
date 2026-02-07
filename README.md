@@ -26,23 +26,14 @@ python3 -m venv venv
 pip install -r requirements.txt
 ```
 
-### Standalone
+### Usage
 
 ```shell
 export API_KEY=<your-icepanel-api-key>
 export LANDSCAPE_ID=<your-landscape-id>
+export LANDSCAPE_VERSION = 'latest'
 export MMDC_CMD=/path/to/mmdc #optional only if you want to convert the .mmd to .png
 python main.py --flow-name="Name of my flow"
-```
-
-### Docker
-
-[Docker Hub link](https://hub.docker.com/r/cladmin/icepanel_mermaid_sequence)
-
-```shell
-```shell
-docker pull cladmin/icepanel_mermaid_sequence 
-docker run -it --env LANDSCAPE_ID="<your_landscape_id>" --env API_KEY="<your_ice_panel_api_key>" -v $(PWD)/data:/app/data docker.io/cladmin/icepanel_mermaid_sequence:v1 --flow-name="My First Flow" --convert
 ```
 
 ## License
@@ -51,5 +42,5 @@ MIT License
 
 ## Support 
 
-<a href="https://www.buymeacoffee.com/tazarov" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
+See [the original repo][chaoslabs-bg/icepanel-sequence-diagrams](https://github.com/chaoslabs-bg/icepanel-sequence-diagrams?tab=readme-ov-file#support)
 
