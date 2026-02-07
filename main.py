@@ -73,33 +73,105 @@ class MermaidSequence:
 
 
 model_objects = {}
-diagrams = {}
+# Cache diagrams by diagram_id instead of object_id to avoid redundant fetches
+diagram_cache = {}
 
 
 def get_model_object(model_object_id):
     if model_object_id in model_objects:
         return model_objects[model_object_id]
+    
+    # Check if model_object_id is None to avoid unnecessary 404s
+    if model_object_id is None:
+        return {"id": None, "name": "Unknown", "type": "unknown"}
+
     rmodel = requests.get(
         f"https://api.icepanel.io/v1/landscapes/{landscape_id}/versions/{version_id}/model/objects/{model_object_id}",
         headers=headers)
-    model_object = rmodel.json()["modelObject"]
+    model_object = rmodel.json()
+    if "modelObject" in model_object:
+        model_object = model_object["modelObject"]
+    elif "id" not in model_object:
+        # If we got a 404 or unexpected response that doesn't look like a model object
+        print(f"Warning: Failed to fetch model object {model_object_id}. Response: {model_object}")
+        # Create a dummy object to allow continuity
+        model_object = {"id": model_object_id, "name": "Unknown Model Object", "type": "unknown"}
+    
     model_objects[model_object_id] = model_object
     return model_object
 
 
 def get_diagram_object(diagram_id, object_id):
-    if object_id in diagrams:
-        dia = diagrams[object_id]
+    if object_id is None:
+        return None
+
+    # Check cache by diagram_id first
+    if diagram_id in diagram_cache:
+        dia = diagram_cache[diagram_id]
     else:
-        rdia = requests.get(
-            f"https://api.icepanel.io/v1/landscapes/{landscape_id}/versions/{version_id}/diagrams/{diagram_id}",
-            headers=headers)
-        dia = rdia.json()["diagram"]
-        diagrams[object_id] = dia
-    print(dia["objects"])
-    print(object_id)
-    diagram_object = dia["objects"][object_id]
-    return diagram_object
+        print(f"Fetching diagram [{diagram_id}] from API")
+        url = f"https://api.icepanel.io/v1/landscapes/{landscape_id}/versions/{version_id}/diagrams/{diagram_id}"
+        
+        # 1. Fetch main Diagram Metadata
+        rdia = requests.get(url, headers=headers)
+        if rdia.status_code != 200:
+            print(f"Error fetching diagram: {rdia.status_code}")
+            return None
+        
+        response_json = rdia.json()
+        dia = response_json.get("diagram", {})
+        
+        # 2. Strategy: Attempt to find 'objects' map in various locations
+        objects = dia.get("objects")
+        
+        if not objects and "diagramContent" in response_json:
+            objects = response_json["diagramContent"].get("objects")
+
+        if not objects:
+            sub_resources = {
+                "/content": ["diagramContent", "objects"], 
+                "/objects": ["objects"],                   
+                "/elements": ["elements"]                  
+            }
+
+            for suffix, keys in sub_resources.items():
+                r_sub = requests.get(f"{url}{suffix}", headers=headers)
+                if r_sub.status_code == 200:
+                    data = r_sub.json()
+                    temp_obj = data
+                    valid_path = True
+                    for key in keys:
+                        if isinstance(temp_obj, dict) and key in temp_obj:
+                            temp_obj = temp_obj[key]
+                        elif isinstance(temp_obj, dict) and key == "objects" and "objects" not in temp_obj:
+                             pass 
+                        else:
+                            valid_path = False
+                            break
+                    
+                    if valid_path and isinstance(temp_obj, dict) and temp_obj:
+                        objects = temp_obj
+                        break
+                    
+                    if suffix == "/objects" and not objects and isinstance(data, dict):
+                         objects = data
+
+        if objects is None:
+            print(f"Warning: Could not locate diagram objects for {diagram_id}")
+            dia["objects"] = {}
+        else:
+            dia["objects"] = objects
+            
+        # Update cache
+        diagram_cache[diagram_id] = dia
+
+    # Look up object in diagram
+    if object_id not in dia["objects"]:
+        # Only print error once per object miss if verbose, but standard logging is fine
+        print(f"Error: Object {object_id} not found in diagram {diagram_id}")
+        return None 
+
+    return dia["objects"][object_id]
 
 
 def find_flow_by_name(name):
@@ -152,7 +224,12 @@ def main(flow_name: str = typer.Option("The name of the flow to create sequence 
 
     for k, v in steps.items():
         dia_obj_ori = get_diagram_object(flow["diagramId"], v["originId"])
+        if dia_obj_ori is None:
+            print(f"Skipping step {k} because origin object {v['originId']} could not be found.")
+            continue
+            
         dia_obj_tar = get_diagram_object(flow["diagramId"], v["targetId"]) if v["targetId"] is not None else None
+        
         model_obj_ori = get_model_object(dia_obj_ori["modelId"])
         model_obj_tar = None
         if dia_obj_tar is not None:
@@ -168,6 +245,10 @@ def main(flow_name: str = typer.Option("The name of the flow to create sequence 
         # print(f"{k}: {v['description']} - {v['type']} - {model_obj_ori['name']}")
         seq.add_sequence_step(interaction)
     print(seq.generate())
+    
+    # Ensure data directory exists
+    os.makedirs("./data", exist_ok=True)
+    
     f = open(f"./data/{create_file_name(flow_name, 'mmd')}", "w")
     f.write(seq.generate())
     f.close()

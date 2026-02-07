@@ -1,5 +1,12 @@
 # IcePanel Flow to Mermaid Sequence
 
+## Forked from chaoslabs-bg/icepanel-sequence-diagrams
+
+It looks like IcePanel modified their API at some point (without bumping the version) which broke the original code. 
+This version works as of Feb 2026.
+
+## Overview
+
 This is a CLI tool that converts [IcePanel](https://icepanel.io/) flow and output to [Mermaid](https://mermaid-js.github.io/mermaid/#/) sequence diagram. 
 It also contains a docker image should one require to create the sequence and get it rendered to supported format.
 
