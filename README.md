@@ -42,5 +42,5 @@ MIT License
 
 ## Support 
 
-See [the original repo][chaoslabs-bg/icepanel-sequence-diagrams](https://github.com/chaoslabs-bg/icepanel-sequence-diagrams?tab=readme-ov-file#support)
+See [the original repo](chaoslabs-bg/icepanel-sequence-diagrams](https://github.com/chaoslabs-bg/icepanel-sequence-diagrams?tab=readme-ov-file#support)
 
