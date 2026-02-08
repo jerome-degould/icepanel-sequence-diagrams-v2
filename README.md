@@ -1,14 +1,16 @@
-# IcePanel Flow to Mermaid Sequence
+# IcePanel Diagram or Flow to Mermaid Sequence
 
 ## Forked from chaoslabs-bg/icepanel-sequence-diagrams
 
 It looks like IcePanel modified their API at some point (without bumping the version) which broke the original code. 
 This version works as of Feb 2026.
 
+Now with added full diagram support!
+
+
 ## Overview
 
-This is a CLI tool that converts [IcePanel](https://icepanel.io/) flow and output to [Mermaid](https://mermaid-js.github.io/mermaid/#/) sequence diagram. 
-It also contains a docker image should one require to create the sequence and get it rendered to supported format.
+This is a CLI tool that converts [IcePanel](https://icepanel.io/) diagrams and flows to [Mermaid](https://mermaid-js.github.io/mermaid/#/) sequence diagram. 
 
 ## Usage
 
@@ -34,6 +36,7 @@ export LANDSCAPE_ID=<your-landscape-id>
 export LANDSCAPE_VERSION = 'latest'
 export MMDC_CMD=/path/to/mmdc #optional only if you want to convert the .mmd to .png
 python main.py --flow-name="Name of my flow"
+python main.py --diagram-name"Name of my diagram"
 ```
 
 ## License
